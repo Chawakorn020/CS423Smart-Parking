@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "author": "Smart Parking Simulator",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 50, "left": 0, "attrs": {} },
+    { "type": "wokwi-hc-sr04", "id": "sensor_slot1", "top": -150, "left": -150, "attrs": { "distance": "200" } },
+    { "type": "wokwi-led", "id": "red_slot1", "top": -60, "left": -100, "attrs": { "color": "red" } },
+    { "type": "wokwi-led", "id": "green_slot1", "top": -60, "left": -60, "attrs": { "color": "green" } },
+    { "type": "wokwi-hc-sr04", "id": "sensor_slot2", "top": -150, "left": 150, "attrs": { "distance": "200" } },
+    { "type": "wokwi-led", "id": "red_slot2", "top": -60, "left": 200, "attrs": { "color": "red" } },
+    { "type": "wokwi-led", "id": "green_slot2", "top": -60, "left": 240, "attrs": { "color": "green" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "sensor_slot1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "sensor_slot1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "sensor_slot1:TRIG", "esp:5", "orange", [ "v0" ] ],
+    [ "sensor_slot1:ECHO", "esp:18", "blue", [ "v0" ] ],
+    [ "red_slot1:C", "esp:GND.1", "black", [ "v0" ] ],
+    [ "red_slot1:A", "esp:26", "red", [ "v0" ] ],
+    [ "green_slot1:C", "esp:GND.1", "black", [ "v0" ] ],
+    [ "green_slot1:A", "esp:27", "green", [ "v0" ] ],
+    [ "sensor_slot2:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "sensor_slot2:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "sensor_slot2:TRIG", "esp:4", "orange", [ "v0" ] ],
+    [ "sensor_slot2:ECHO", "esp:16", "blue", [ "v0" ] ],
+    [ "red_slot2:C", "esp:GND.2", "black", [ "v0" ] ],
+    [ "red_slot2:A", "esp:17", "red", [ "v0" ] ],
+    [ "green_slot2:C", "esp:GND.2", "black", [ "v0" ] ],
+    [ "green_slot2:A", "esp:19", "green", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

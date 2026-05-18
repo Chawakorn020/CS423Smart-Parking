@@ -1,0 +1,204 @@
+[
+    {
+        "id": "6f4afbaea5537450",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "mqtt_broker_hivemq",
+        "type": "mqtt-broker",
+        "name": "HiveMQ",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true
+    },
+    {
+        "id": "mqtt_in_slot1",
+        "type": "mqtt in",
+        "z": "6f4afbaea5537450",
+        "name": "รับค่า Slot 1",
+        "topic": "parking/slot1/status",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker_hivemq",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 330,
+        "y": 360,
+        "wires": [
+            [
+                "calc_slot1"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_in_slot2",
+        "type": "mqtt in",
+        "z": "6f4afbaea5537450",
+        "name": "รับค่า Slot 2",
+        "topic": "parking/slot2/status",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker_hivemq",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 330,
+        "y": 420,
+        "wires": [
+            [
+                "calc_slot2"
+            ]
+        ]
+    },
+    {
+        "id": "calc_slot1",
+        "type": "function",
+        "z": "6f4afbaea5537450",
+        "name": "คำนวณเวลา Slot 1",
+        "func": "let status = parseInt(msg.payload);\nlet slotData = flow.get(\"slot1_data\") || { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0, totalTime: 0 };\nif (status === 1 && !slotData.isOccupied) {\n    slotData.isOccupied = true;\n    slotData.entryTime = Date.now();\n} else if (status === 0 && slotData.isOccupied) {\n    slotData.isOccupied = false;\n    let duration = (Date.now() - slotData.entryTime) / 1000;\n    slotData.totalTime += duration;\n    slotData.totalCars += 1;\n    slotData.avgDurationSeconds = slotData.totalTime / slotData.totalCars;\n}\nflow.set(\"slot1_data\", slotData);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "calc_slot2",
+        "type": "function",
+        "z": "6f4afbaea5537450",
+        "name": "คำนวณเวลา Slot 2",
+        "func": "let status = parseInt(msg.payload);\nlet slotData = flow.get(\"slot2_data\") || { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0, totalTime: 0 };\nif (status === 1 && !slotData.isOccupied) {\n    slotData.isOccupied = true;\n    slotData.entryTime = Date.now();\n} else if (status === 0 && slotData.isOccupied) {\n    slotData.isOccupied = false;\n    let duration = (Date.now() - slotData.entryTime) / 1000;\n    slotData.totalTime += duration;\n    slotData.totalCars += 1;\n    slotData.avgDurationSeconds = slotData.totalTime / slotData.totalCars;\n}\nflow.set(\"slot2_data\", slotData);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "http_get_api",
+        "type": "http in",
+        "z": "6f4afbaea5537450",
+        "name": "API ดึงข้อมูล",
+        "url": "/api/parking",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 330,
+        "y": 500,
+        "wires": [
+            [
+                "format_api_response"
+            ]
+        ]
+    },
+    {
+        "id": "format_api_response",
+        "type": "function",
+        "z": "6f4afbaea5537450",
+        "name": "รวมข้อมูล Slot 1 & 2",
+        "func": "let slot1 = flow.get(\"slot1_data\") || { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0 };\nlet slot2 = flow.get(\"slot2_data\") || { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0 };\nmsg.payload = {\n    \"slot1\": slot1,\n    \"slot2\": slot2\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 500,
+        "wires": [
+            [
+                "http_api_response"
+            ]
+        ]
+    },
+    {
+        "id": "http_api_response",
+        "type": "http response",
+        "z": "6f4afbaea5537450",
+        "name": "ส่งกลับไป Next.js",
+        "statusCode": "200",
+        "headers": {
+            "Access-Control-Allow-Origin": "*"
+        },
+        "x": 770,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "http_post_reset",
+        "type": "http in",
+        "z": "6f4afbaea5537450",
+        "name": "API Reset ข้อมูล",
+        "url": "/api/reset",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 340,
+        "y": 580,
+        "wires": [
+            [
+                "reset_function"
+            ]
+        ]
+    },
+    {
+        "id": "reset_function",
+        "type": "function",
+        "z": "6f4afbaea5537450",
+        "name": "ล้างข้อมูลทั้งหมด",
+        "func": "flow.set(\"slot1_data\", { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0, totalTime: 0 });\nflow.set(\"slot2_data\", { isOccupied: false, avgDurationSeconds: 0, totalCars: 0, entryTime: 0, totalTime: 0 });\nmsg.payload = { success: true, message: \"Data Cleared\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 580,
+        "wires": [
+            [
+                "http_res_reset"
+            ]
+        ]
+    },
+    {
+        "id": "http_res_reset",
+        "type": "http response",
+        "z": "6f4afbaea5537450",
+        "name": "ตอบกลับ Reset",
+        "statusCode": "200",
+        "headers": {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        "x": 760,
+        "y": 580,
+        "wires": []
+    }
+]

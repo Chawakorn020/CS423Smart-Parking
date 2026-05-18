@@ -1,0 +1,62 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+const char* mqtt_server = "broker.hivemq.com";
+
+const int trigPin1 = 5; const int echoPin1 = 18;
+const int redPin1 = 26; const int greenPin1 = 27;
+
+const int trigPin2 = 4; const int echoPin2 = 16;
+const int redPin2 = 17; const int greenPin2 = 19;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(redPin1, OUTPUT); pinMode(greenPin1, OUTPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(redPin2, OUTPUT); pinMode(greenPin2, OUTPUT);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) { delay(500); }
+  client.setServer(mqtt_server, 1883);
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    if (client.connect("ESP32_SmartParking_Auto")) { 
+      Serial.println("MQTT Connected"); 
+    } else { delay(5000); }
+  }
+}
+
+float getDistance(int trig, int echo) {
+  digitalWrite(trig, LOW); delayMicroseconds(2);
+  digitalWrite(trig, HIGH); delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  return pulseIn(echo, HIGH) * 0.034 / 2;
+}
+
+void loop() {
+  if (!client.connected()) { reconnect(); }
+  client.loop();
+
+  int status1 = (getDistance(trigPin1, echoPin1) < 100) ? 1 : 0;
+  if (status1 == 1) { digitalWrite(redPin1, HIGH); digitalWrite(greenPin1, LOW); }
+  else { digitalWrite(redPin1, LOW); digitalWrite(greenPin1, HIGH); }
+
+  int status2 = (getDistance(trigPin2, echoPin2) < 100) ? 1 : 0;
+  if (status2 == 1) { digitalWrite(redPin2, HIGH); digitalWrite(greenPin2, LOW); }
+  else { digitalWrite(redPin2, LOW); digitalWrite(greenPin2, HIGH); }
+
+  static unsigned long lastMsg = 0;
+  if (millis() - lastMsg > 2000) {
+    lastMsg = millis();
+    client.publish("parking/slot1/status", String(status1).c_str());
+    client.publish("parking/slot2/status", String(status2).c_str());
+  }
+}
